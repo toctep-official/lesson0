@@ -9,8 +9,6 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <style>
-        /* Цвета берём из темы Telegram (светлая/тёмная),
-           а после запятой — запасной цвет для обычного браузера */
         body {
             font-family: sans-serif;
             text-align: center;
@@ -18,7 +16,7 @@
             margin: 0;
             background: var(--tg-theme-bg-color, #ffffff);
             color: var(--tg-theme-text-color, #000000);
-            user-select: none; /* чтобы при быстрых тапах не выделялся текст */
+            user-select: none;
         }
         #score {
             font-size: 48px;
@@ -33,16 +31,13 @@
             border-radius: 50%;
             background: var(--tg-theme-secondary-bg-color, #f0f0f0);
             cursor: pointer;
-            transition: transform 0.05s; /* плавность «нажатия» */
+            transition: transform 0.05s;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
-        /* :active — пока палец на монетке, она чуть уменьшается */
         #coin:active {
             transform: scale(0.9);
         }
-        
-        /* Стили для новой кнопки улучшения */
         #upgrade {
             margin-top: 32px;
             padding: 14px 28px;
@@ -59,7 +54,6 @@
             transform: scale(0.95);
             opacity: 0.8;
         }
-        
     </style>
 </head>
 <body>
@@ -67,7 +61,6 @@
     <div id="score">0</div>
     <button id="coin">🪙</button>
     
-    <!-- Новая кнопка улучшения -->
     <br>
     <button id="upgrade">Улучшить: +1 за тап (цена 10)</button>
 
@@ -81,39 +74,70 @@
             document.getElementById('greeting').textContent = `Привет, ${user.first_name}!`;
         }
 
+        // --- ИГРОВЫЕ ПЕРЕМЕННЫЕ ---
         let score = 0;
-        let perClick = 1; // сколько очков даёт один тап
-        let price = 10;   // начальная цена улучшения
+        let perClick = 1; 
+        let price = 10;   
 
-        // Находим элементы на странице один раз и запоминаем
+        // --- ЭЛЕМЕНТЫ ---
         const scoreText = document.getElementById('score');
         const coin = document.getElementById('coin');
         const upgradeBtn = document.getElementById('upgrade');
 
-        // Что делать при тапе по монетке
+        function updateUpgradeText() {
+            upgradeBtn.textContent = `Улучшить: +1 за тап (цена ${price})`;
+        }
+
+        // Функция сохранения
+        function save() {
+            const text = JSON.stringify({ score: score, perClick: perClick, price: price });
+            tg.CloudStorage.setItem('save', text, (error, success) => {
+                if (error) console.error('Ошибка сохранения:', error);
+            });
+        }
+
+        // --- 1. ЗАГРУЗКА И ЗАПУСК ТАЙМЕРА ---
+        tg.CloudStorage.getItem('save', (error, value) => {
+            // Восстанавливаем прогресс, если он есть
+            if (!error && value) {
+                const data = JSON.parse(value);
+                score = data.score;
+                perClick = data.perClick;
+                price = data.price;
+                
+                scoreText.textContent = score;
+                updateUpgradeText();
+            }
+            
+            // ВАЖНО: Таймер автосохранения запускаем только здесь!
+            // Теперь мы уверены, что старый прогресс уже загружен в переменные (или его точно нет),
+            // и таймер не перезапишет его нулями.
+            setInterval(save, 2000);
+        });
+
+
+        // --- 2. ЛОГИКА ИГРЫ ---
+
         coin.addEventListener('click', () => {
             score += perClick;              
             scoreText.textContent = score;  
             tg.HapticFeedback.impactOccurred('light'); 
         });
 
-        // Что делать при нажатии на кнопку улучшения
         upgradeBtn.addEventListener('click', () => {
             if (score >= price) {
-                // Если очков хватает
                 score -= price;
                 scoreText.textContent = score;
                 
                 perClick += 1;
                 price *= 2;
                 
-                // Обновляем текст на кнопке
-                upgradeBtn.textContent = `Улучшить: +1 за тап (цена ${price})`;
-                
-                // Приятная вибрация успеха
+                updateUpgradeText();
                 tg.HapticFeedback.notificationOccurred('success');
+                
+                // Мгновенное сохранение после покупки
+                save(); 
             } else {
-                // Если очков не хватает
                 tg.showAlert('Не хватает очков!');
                 tg.HapticFeedback.notificationOccurred('error');
             }
