@@ -34,17 +34,42 @@
             background: var(--tg-theme-secondary-bg-color, #f0f0f0);
             cursor: pointer;
             transition: transform 0.05s; /* плавность «нажатия» */
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
         /* :active — пока палец на монетке, она чуть уменьшается */
         #coin:active {
             transform: scale(0.9);
         }
+        
+        /* Стили для новой кнопки улучшения */
+        #upgrade {
+            margin-top: 32px;
+            padding: 14px 28px;
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--tg-theme-button-text-color, #ffffff);
+            background: var(--tg-theme-button-color, #2ea6ff);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        #upgrade:active {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+        
     </style>
 </head>
 <body>
     <h2 id="greeting">Привет!</h2>
     <div id="score">0</div>
     <button id="coin">🪙</button>
+    
+    <!-- Новая кнопка улучшения -->
+    <br>
+    <button id="upgrade">Улучшить: +1 за тап (цена 10)</button>
 
     <script>
         const tg = window.Telegram.WebApp;
@@ -56,19 +81,42 @@
             document.getElementById('greeting').textContent = `Привет, ${user.first_name}!`;
         }
 
-        // let — переменная, которую можно менять (как обычная переменная в Python)
         let score = 0;
         let perClick = 1; // сколько очков даёт один тап
+        let price = 10;   // начальная цена улучшения
 
         // Находим элементы на странице один раз и запоминаем
         const scoreText = document.getElementById('score');
         const coin = document.getElementById('coin');
+        const upgradeBtn = document.getElementById('upgrade');
 
         // Что делать при тапе по монетке
         coin.addEventListener('click', () => {
-            score += perClick;              // как attempts += 1 в твоей игре
-            scoreText.textContent = score;  // показываем новое число на экране
-            tg.HapticFeedback.impactOccurred('light'); // лёгкая вибрация телефона
+            score += perClick;              
+            scoreText.textContent = score;  
+            tg.HapticFeedback.impactOccurred('light'); 
+        });
+
+        // Что делать при нажатии на кнопку улучшения
+        upgradeBtn.addEventListener('click', () => {
+            if (score >= price) {
+                // Если очков хватает
+                score -= price;
+                scoreText.textContent = score;
+                
+                perClick += 1;
+                price *= 2;
+                
+                // Обновляем текст на кнопке
+                upgradeBtn.textContent = `Улучшить: +1 за тап (цена ${price})`;
+                
+                // Приятная вибрация успеха
+                tg.HapticFeedback.notificationOccurred('success');
+            } else {
+                // Если очков не хватает
+                tg.showAlert('Не хватает очков!');
+                tg.HapticFeedback.notificationOccurred('error');
+            }
         });
     </script>
 </body>
