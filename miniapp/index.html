@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Моё первое Mini App</title>
+
+    <!-- Библиотека от Telegram: даёт доступ к window.Telegram.WebApp -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        /* Цвета берём из темы Telegram (светлая/тёмная),
+           а после запятой — запасной цвет для обычного браузера */
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding: 40px 16px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+        }
+        button {
+            font-size: 18px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            background: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+        }
+    </style>
+</head>
+<body>
+    <h1 id="greeting">Привет!</h1>
+    <p>Добро пожаловать на сервер.</p>
+    <button id="hello-button">Нажми меня</button>
+
+    <script>
+        // tg — то же самое, что переменная в Python: короткое имя для длинной штуки
+        const tg = window.Telegram.WebApp;
+        tg.ready();   // говорим Telegram, что страница загрузилась
+        tg.expand();  // раскрываем окно на весь экран
+
+        // Telegram сам передаёт данные пользователя — input() не нужен
+        const user = tg.initDataUnsafe.user;
+
+        // if/else как в Python, только условие в скобках, а блок в { }
+        if (user) {
+            // `...${...}` — это как f-строка в Python
+            document.getElementById('greeting').textContent = `Привет, ${user.first_name}!`;
+        } else {
+            document.getElementById('greeting').textContent = 'Привет! (открыто не в Telegram)';
+        }
+
+        // Что делать при нажатии на кнопку
+        document.getElementById('hello-button').addEventListener('click', () => {
+            tg.showAlert('Кнопка работает! 🎉');
+        });
+    </script>
+</body>
+</html>
